@@ -99,19 +99,24 @@ write.csv(submission, file = "submission.csv", row.names = FALSE)
 # testing k-fold cross validation here
 train$random <- runif(nrow(train), min=1, max=60000)
 train$subset <-  ntile(train$random, 10)
+# + altinstaller
 
-subsets <- function(some_number) {
+train$construction_year[train$construction_year >1996 & train$construction_year <1997 ] <- 0
+
+train$construction_year[train$construction_year == 0] <- NA
+
+rf_model_1 <- function(some_number) {
   df_train <- train %>% filter(train$subset == some_number)
   df_test <- train %>% filter(train$subset != some_number)
 
-  model_forest <- randomForest(as.factor(status_group) ~ amount_tsh
-                               + gps_height + altinstaller + date_recorded
+  model_forest <- randomForest(as.factor(status_group) ~ 
+                               + gps_height  + date_recorded
                                + longitude + latitude + management
-                               + construction_year + extraction_type_group
+                               + extraction_type_group
                                + water_quality + quantity + source
-                               + waterpoint_type + population, 
+                               + waterpoint_type , 
                                data = df_train,
-                               ntree = 78, nodesize = 2)
+                               ntree = 70, nodesize = 2)
   
   df_test$y_pred <- predict(model_forest, df_test)
   
@@ -122,8 +127,9 @@ subsets <- function(some_number) {
   return(results)
 }
 
+list_results <- lapply(1:10, rf_model_1) #Generate data
 
-list_results <- lapply(1:10, subsets) #Generate data
+
 
 for (i in 1:10){
   print(list_results[[i]][3]$error)
