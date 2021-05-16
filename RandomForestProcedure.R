@@ -1,5 +1,5 @@
 library(randomForest)
-
+library(dplyr) 
 library(caret)
 # Importing training values
 train_values <- read.csv("trainingsetvalues.csv")
@@ -74,7 +74,6 @@ model_forest <- randomForest(as.factor(status_group) ~ amount_tsh
                              data = train, importance = TRUE,
                              ntree = 78, nodesize = 2)
 
-
 # get model statistics
 importance(model_forest)
 
@@ -96,3 +95,31 @@ names(submission)[1] <- "id"
 
 # printing submission to csv
 write.csv(submission, file = "submission.csv", row.names = FALSE)
+
+# testing k-fold cross validation here
+train$random <- runif(nrow(train), min=1, max=60000)
+train$subset <-  ntile(train$random, 10)
+
+subsets <- function(some_number) {
+  df_train <- train %>% filter(train$subset == some_number)
+  df_test <- train %>% filter(train$subset != some_number)
+
+  model_forest <- randomForest(as.factor(status_group) ~ amount_tsh
+                               + gps_height + altinstaller + date_recorded
+                               + longitude + latitude + management
+                               + construction_year + extraction_type_group
+                               + water_quality + quantity + source
+                               + waterpoint_type + population, 
+                               data = df_train,
+                               ntree = 78, nodesize = 2)
+  
+  df_test$y_pred <- predict(model_forest, df_test)
+  
+  results <- list("df_test" = df_test , "model_forest" = model_forest)
+  
+  return(results)
+}
+
+
+list_results <- lapply(1:2, subsets) #Generate data
+

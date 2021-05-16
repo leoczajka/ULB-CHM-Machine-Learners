@@ -15,6 +15,7 @@ if (Sys.info()[8] == "??") {
 # load packages
 library(Hmisc)
 library(tidyverse)
+library(dplyr) 
 
 # Importing data sets 
 train_values <- read.csv("trainingsetvalues.csv")
@@ -32,6 +33,8 @@ test_values <- read.csv("testsetvalues.csv")
 # always remove unprecise small cat 
 # add very precise cat-var progressively
 
+# general cleaning : set categorical var into factor
+
 # classify the variables based on type and number of different values
 # get a glimpse at the data
 describe(df)
@@ -40,15 +43,15 @@ describe(df)
 # num_private, recorded_by
 
 # numerical variables
-  # amount_tsh - but few values - 98, many 0, but maybe it s free
+  # amount_tsh - but few values - 98, many 0
   # gps_height - half are 0
   # longitude 
   # latitude 
   # population - many 0
 hist(df$latitude)
-hist(df$longitude) # set 0 to Mode ?
+hist(df$longitude) # set 0 to Mode ? set NA 
 hist(df$population[df$population>1 & df$population <500]) # 
-table(df$population)
+table(df$population) # put at test
   # unlikely counts for 0 and 1 - set to NA - set to mode or P50
 hist(df$gps_height)
 hist(df$amount_tsh[df$amount_tsh>0 & df$amount_tsh<1000])
@@ -64,7 +67,7 @@ table(df$region)
 
   # region_code  27
 table(df$region_code)
-table(df$region_code, df$region)
+table(df$region_code, df$region) # to be tested 
 
   # district_code - 20
 table(df$district_code)
@@ -80,14 +83,15 @@ table(df$scheme_management)
 table(df$permit)
 
   # construction_year  - 55
-  hist(df$construction_year[df$construction_year!=0])
+  hist(df$construction_year[df$construction_year!=0]) 
+    # to be tested
 
   # extraction_type - 18 extraction_type_group extraction_type_class 
   table(df$extraction_type, df$extraction_type_group)
   table(df$extraction_type_group, df$extraction_type_class)
   
   # management management_group
-  table(df$management,df$management_group )
+  table(df$management, df$management_group )
   
   # payment payment_type
   table(df$payment,df$payment_type )
@@ -96,10 +100,10 @@ table(df$permit)
   table(df$water_quality,df$quality_group )
   
   # quantity quantity_group
-  table(df$quantity,df$quantity_group )
+  table(df$quantity, df$quantity_group)
   
   # source source_type source_class
-  table(df$source,df$source_type )
+  table(df$source, df$source_type )
   table(df$source_type,df$source_class )
   
   # waterpoint_type waterpoint_type_group
@@ -116,7 +120,7 @@ table(df$permit)
   df$m_months <- as.numeric(format(df$m_date,'%m'))
   df$m_day <- weekdays(df$m_date)
   df$time <- df$m_year - df$construction_year
-  df$time[df$construction_year==0] <- NA
+  df$time[df$construction_year==0] <- NA # to b tested
   
   # View(df %>% filter(df$time==53))
 
