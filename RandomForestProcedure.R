@@ -115,11 +115,25 @@ subsets <- function(some_number) {
   
   df_test$y_pred <- predict(model_forest, df_test)
   
-  results <- list("df_test" = df_test , "model_forest" = model_forest)
+  error <- sum(df_test$y_pred!=df_test$status_group)/nrow(df_test)
+  
+  results <- list("df_test" = df_test , "model_forest" = model_forest, "error" = error)
   
   return(results)
 }
 
 
-list_results <- lapply(1:2, subsets) #Generate data
+list_results <- lapply(1:10, subsets) #Generate data
+
+for (i in 1:10){
+  print(list_results[[i]][3]$error)
+}
+
+df_test <- list_results[[1]][1]$df_test
+sum(df_test$y_pred!=df_test$status_group)/nrow(df_test)
+df_test$error <- df_test$y_pred!=df_test$status_group
+typeof(df_test$y_pred)
+typeof(df_test$status_group)
+View(df_test %>% select(y_pred, status_group, error))
+
 
