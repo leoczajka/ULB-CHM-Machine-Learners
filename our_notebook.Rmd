@@ -8,9 +8,46 @@ editor_options:
   chunk_output_type: console
 ---
 
+the pb we have is classification
+
 This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+Variable selection :
+waterpoint_type > waterpoint_type_group
+source > source_type > source_class
+quantity => quantity_group 
+water_quality > quality_group
+payment = payment_type
+management > management_group
+extraction_type > extraction_type_group > extraction_type_class
+region_code > region
+
+
+To be transformed :
+construction_year 
+date_recorded 
+amount_tsh
+
+unique or very numerous values : 
+scheme_name recorded_by
+ward 
+lga?
+subvillage
+wpt_name
+installer
+funder 
+date_recorded 
+
+weird ones :
+population
+num_private
+
+to be created : 
+is the funder the saame of the installor
+
+
 
 ```{r}
 plot(cars)
