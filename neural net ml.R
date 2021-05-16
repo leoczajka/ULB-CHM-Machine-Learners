@@ -110,8 +110,6 @@ nn_train <- predict(nn, trainf)
 # get prediction stats
 confusionMatrix(nn_train, as.factor(trainf$status_group))
 
-# lowercasing installer in test set
-test$altinstaller <- tolower(test$installer)
 
 # predicting test set with model
 nn_test_prediction <- predict(nn, test)
