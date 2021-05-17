@@ -10,7 +10,7 @@ df_gbt <- df_gbt %>% filter(df_gbt$amount_tsh>0)
 df_gbt$random_100 <- runif(nrow(df_gbt), min=1, max=nrow(df_gbt))
 df_gbt$subset_100 <-  ntile(df_gbt$random_100, 100)
 
-df_gbt <- df_gbt %>% filter(df_gbt$subset_100 < 6)
+df_gbt <- df_gbt %>% filter(df_gbt$subset_100 < 10)
 nrow(df_gbt)
 
 df_gbt$random <- runif(nrow(df_gbt), min=1, max=nrow(df_gbt))
@@ -22,7 +22,7 @@ gbt_model_1 <- function(some_number) {
   
    model_gbt <- train(as.factor(status_group) ~ 
                                  + gps_height + population 
-                               + construction_year + longitude + latitude, 
+                               + construction_year + longitude + quantity_group + latitude, 
                                data = df_train,
                                method = "xgbTree")
   

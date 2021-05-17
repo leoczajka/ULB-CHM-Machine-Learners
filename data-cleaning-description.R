@@ -18,7 +18,8 @@ library(tidyverse)
 library(dplyr) 
 library(caret)
 library(xgboost)
-
+library(mlbench)# For data
+library(FSelector)
 
 # Importing data sets 
 train_values <- read.csv("trainingsetvalues.csv")
@@ -44,6 +45,8 @@ describe(df)
 
 # irrelevant or not varying variables
 # num_private, recorded_by
+describe(df$num_private)
+describe(df$recorded_by)
 
 # numerical variables
   # amount_tsh - but few values - 98, many 0
@@ -52,11 +55,17 @@ describe(df)
   # latitude 
   # population - many 0
 hist(df$latitude)
+sum(df$latitude==0)
 hist(df$longitude) # set 0 to Mode ? set NA 
-hist(df$population[df$population>1 & df$population <500]) # 
-table(df$population) # put at test
-  # unlikely counts for 0 and 1 - set to NA - set to mode or P50
+sum(df$longitude==0)
 hist(df$gps_height)
+sum(df$gps_height==0)
+df<- df[, !(colnames(df) %in% c("num_private", "recorded_by"))]
+
+table(df$population)
+hist(df$population[df$population>1 & df$population <500]) # 
+ # put at test
+  # unlikely counts for 0 and 1 - set to NA - set to mode or P50
 hist(df$amount_tsh[df$amount_tsh>0 & df$amount_tsh<1000])
 table(df$amount_tsh) # pretty weird values
 
@@ -86,7 +95,7 @@ table(df$scheme_management)
 table(df$permit)
 
   # construction_year  - 55
-  hist(df$construction_year[df$construction_year!=0]) 
+  hist(df$construction_year[df$construction_year!=0])
     # to be tested
 
   # extraction_type - 18 extraction_type_group extraction_type_class 
@@ -119,11 +128,11 @@ table(df$permit)
   df$daily_time_trend <- as.numeric(df$m_date) # remove the too early ones
   hist(df$daily_time_trend[df$daily_time_trend>14942], breaks = seq(from=14942, to=16042, by=10))
   
-  df$m_year <- as.numeric(format(df$m_date,'%Y'))
-  df$m_months <- as.numeric(format(df$m_date,'%m'))
-  df$m_day <- weekdays(df$m_date)
-  df$time <- df$m_year - df$construction_year
-  df$time[df$construction_year==0] <- NA # to b tested
+  df$m_year <- as.factor(as.numeric(format(df$m_date,'%Y')))
+  df$m_months <- as.factor(as.numeric(format(df$m_date,'%m')))
+  df$m_day <- as.factor(weekdays(df$m_date))
+  df$age <- df$m_year - df$construction_year 
+  df$age[df$construction_year==0] <- NA # to b tested 
   
   # View(df %>% filter(df$time==53))
 
@@ -143,18 +152,18 @@ table(df$permit)
  df$scheme_name <- tolower(df$scheme_name)
  table(df$funder)
   df$funder_is_installer <- df$funder == df$installer & df$installer!=""
-  df$funder_is_installer[df$installer=="" | df$funder==""] <- NA 
+  df$funder_is_installer[df$installer=="" | df$funder==""] <- "MISSING"
   table(df$funder_is_installer)
   
 # create variables :
   # distance to measuring dates
   # year and month of the measured
 
- df<- df[, !(colnames(df) %in% c("region", "extraction_type_group", "extraction_type_class", "management_group", "payment_type", "quality_group", "quantity_group", "source_class","source_type", "waterpoint_type_group", "num_private", "recorded_by"))]
+ # df<- df[, !(colnames(df) %in% c("region", "extraction_type_group", "extraction_type_class", "management_group", "payment_type", "quality_group", "quantity_group", "source_class","source_type", "waterpoint_type_group", "num_private", "recorded_by"))]
 # remove also the date - better use it as numerical
 str(df)
  # so what do we get for the most basic model?
  
- 
+
  
   

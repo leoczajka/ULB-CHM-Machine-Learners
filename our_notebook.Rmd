@@ -8,56 +8,97 @@ editor_options:
   chunk_output_type: console
 ---
 
-the pb we have is classification
+**Part 1** 
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+First we import the data, name our main (train) dataset *df*, 
+
+```{r}
+train_values <- read.csv("trainingsetvalues.csv")
+train_labels <- read.csv("trainingsetlabels.csv")
+df <- merge(train_values, train_labels)
+test_values <- read.csv("testsetvalues.csv")
+```
+
+Then we load each package needed for this part
+```{r}
+library(Hmisc)
+library(tidyverse)
+library(dplyr) 
+```
+Let's have a general look at all features. This will allow us to quickly classify the different variables of our data set, given their type and structure.
+```{r}
+describe(df)
+```
+We remove two variables : *num_private* is almost always equal to 0 and there is no documentation about it; *recorded_by* is always equal to the same value.
+```{r}
+describe(df$num_private)
+describe(df$recorded_by)
+```
+There are five strictly (we consider dates separately) numerical variables:  *latitude*, *longitude*, *gps_height*, *population* and *amount_tsh*. All are relevant to the prediction problem we try to solve here. A closer inspection of the *longitude* reveals that some observations have value 0. Given the geographical situation of Tanzania this is not possible. A thorough correction of the data set would imply infering the *longitude* from categorical geographical variables available in the data set. However this would take time and, as the number of observations for which this occurs is small (3%), we simply decide to remove those observations from the data set. By contrast this is not an issue for the *latitude* which seems to be relatively well distributed. About 1/3 of the *gps_height* on the other hand is equal to 0. This value is of course possible, but it's frequency, together with the fact that zero probably correspond to missing in the longitude's variable, may suggest that, as such, *gps_height* is a relatively badly measured variable. 
+```{r}
+hist(df$longitude)
+sum(df$longitude==0)/nrow(df)
+hist(df$latitude)
+sum(df$latitude==0)
+hist(df$gps_height)
+sum(df$gps_height==0)
+df <- df %>% filter(df$longitude==0)
+```
+The variables *population* and *amount_tsh* also seem to have been badly measured. 36% of observations have a population equal to 0, and an additional 12% have a population equal to 1. Both values could be correct. But water pumps should not be too far from people benefiting from it, and as such we would have expected such values to be less frequent. Also, the relative weight of these values is in stark contrast with the rest of the distribution of the *population* variable. About 70% of the *amount_tsh* variable is equal to 0, meaning that there was no water available to waterpoint. This figure is puzzling given that more than half of the pump are qualified as functional, we would expect indeed that some water needs to be available at the water point for the pump to be tried and ultimately assessed as functional. A closer inspection of the distribution of non-zero values further illustrate how irregular this variable is. 
+
+```{r}
+sum(df$population==0)/nrow(df)
+sum(df$population==1)/nrow(df)
+hist(df$population)
+hist(df$population[df$population>1 & df$population <500], breaks = seq(from=1, to=501, by=10))
+hist(df$amount_tsh)
+hist(df$amount_tsh[df$amount_tsh>0 & df$amount_ts <1000])
+sum(df$amount_tsh==0)/nrow(df)
+table(df$status_group)
+```
+The data set contains two information about time: one about the year when the pump was constructed (*construction_year*), the other about the exact date when the pump was tested (*date_recorded*). *construction_year* equals zero for about 35% of the observation. This is obviously a measurement error. We set these observations to the median. *date_recorded* could be used as a factor variable with 356 different values and capturing daily fixed effect. However given that this contributes to considerably increase dimensions of the problem and therefore computing-time for several machine learning procedures, we decide to exploit information from this variable differently. First we transform it into a number to capture time trained at daily rate. We delete 31 observations with strictly implausible values. Then we create 3 categorical variables capturing the year, month and day of the week, during which the measure was taken. 
+```{r}
+sum(df$construction_year==0)/nrow(df)
+describe(df$construction_year[df$construction_year!=0])
+df$construction_year[df$construction_year==0] <- 2000
+
+df$m_date <- as.Date(df$date_recorded)
+df$daily_time_trend <- as.numeric(df$m_date) # remove the too early ones
+hist(df$daily_time_trend)
+table(f$daily_time_trend)
+df <- df %>% filter(df$daily_time_trend<14977)
+hist(df$daily_time_trend[df$daily_time_trend>14942], breaks = seq(from=14942, to=16042, by=10))
+df$m_year <- as.factor(as.numeric(format(df$m_date,'%Y')))
+df$m_months <- as.factor(as.numeric(format(df$m_date,'%m')))
+df$m_day <- as.factor(weekdays(df$m_date))
+```
+
+```{r}
+df$installer <- tolower(df$installer)
+ df$funder <- tolower(df$funder)
+ df$funder_is_installer <- df$funder == df$installer & df$installer!=""
+  df$funder_is_installer[df$installer=="" | df$funder==""] <- "MISSING"
+  table(df$funder_is_installer)
+```
+
+
+We apply all modification to the test_value dataset
+```{r}
+test_values <- test_values %>% filter(test_values$longitude==0)
+test_values$construction_year[test_values$construction_year==0] <- 2000
+test_values$m_date <- as.Date(test_values$date_recorded)
+test_values$daily_time_trend <- as.numeric(test_values$m_date) 
+test_values <- test_values %>% filter(test_values$daily_time_trend<14977)
+test_values$m_year <- as.factor(as.numeric(format(test_values$m_date,'%Y')))
+test_values$m_months <- as.factor(as.numeric(format(test_values$m_date,'%m')))
+test_values$m_day <- as.factor(weekdays(test_values$m_date))
+test_values$installer <- tolower(test_values$installer)
+test_values$funder <- tolower(test_values$funder)
+test_values$funder_is_installer <- test_values$funder == test_values$installer & test_values$installer!=""
+test_values$funder_is_installer[test_values$installer=="" | test_values$funder==""] <- "MISSING"
+```
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
-
-Variable selection :
-waterpoint_type > waterpoint_type_group
-source > source_type > source_class
-quantity => quantity_group 
-water_quality > quality_group
-payment = payment_type
-management > management_group
-extraction_type > extraction_type_group > extraction_type_class
-region_code > region
-
-
-To be transformed :
-construction_year 
-date_recorded 
-amount_tsh
-
-unique or very numerous values : 
-scheme_name recorded_by
-ward 
-lga?
-subvillage
-wpt_name
-installer
-funder 
-date_recorded 
-
-weird ones :
-population
-num_private
-
-to be created : 
-is the funder the saame of the installor
-
-
-
-```{r}
-plot(cars)
-```
-
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
-
-```{r}
-iris
-```
 
 When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
 

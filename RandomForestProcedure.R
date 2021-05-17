@@ -129,8 +129,6 @@ rf_model_1 <- function(some_number) {
 
 list_results <- lapply(1:10, rf_model_1) #Generate data
 
-
-
 for (i in 1:10){
   print(list_results[[i]][3]$error)
 }
