@@ -35,9 +35,15 @@ gbt_model_1 <- function(some_number) {
   return(results)
 }
 
-list_results <- lapply(1:10, gbt_model_1) #Generate data
 
+list_results_gbt1 <- lapply(1:10, gbt_model_1) #Generate data
+results_v = c()
 for (i in 1:10){
-  print(list_results[[i]][3]$error)
+  results_v[i] <- list_results_gbt1[[i]][3]$error
+  print(list_results_gbt1[[i]][3]$error)
 }
+
+error_mean_gbtmodel1 = mean(results_v)
+print('mean of the 10 results (gbt model 1) : ')
+print(error_mean_gbtmodel1)
 
