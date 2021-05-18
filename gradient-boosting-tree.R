@@ -29,7 +29,6 @@ gbt_model_1 <- function(some_number) {
   df_test <- df_gbt %>% filter(df_gbt$subset != some_number)
   
   model_gbt <- train(as.factor(status_group) ~ 
-                     +amount_tsh
                        + gps_height + population 
                      + construction_year + longitude + latitude, 
                      data = df_train,
