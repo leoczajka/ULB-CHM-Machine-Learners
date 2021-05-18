@@ -29,7 +29,7 @@ if (Sys.info()[8] == "??") {
 First we import the data, name our main (train) dataset *df*, 
 
 ```{r}
-rm(list = ls())
+
 train_values <- read.csv("trainingsetvalues.csv")
 train_labels <- read.csv("trainingsetlabels.csv")
 df <- merge(train_values, train_labels)
@@ -61,7 +61,7 @@ hist(df$latitude)
 sum(df$latitude==0)
 hist(df$gps_height)
 sum(df$gps_height==0)
-df <- df %>% filter(df$longitude!=0)
+# df <- df %>% filter(df$longitude!=0)
 ```
 The variables *population* and *amount_tsh* also seem to have been badly measured. 36% of observations have a population equal to 0, and an additional 12% have a population equal to 1. Both values could be correct. But water pumps should not be too far from people benefiting from it, and as such we would have expected such values to be less frequent. Also, the relative weight of these values is in stark contrast with the rest of the distribution of the *population* variable. About 70% of the *amount_tsh* variable is equal to 0, meaning that there was no water available to waterpoint. This figure is puzzling given that more than half of the pump are qualified as functional, we would expect indeed that some water needs to be available at the water point for the pump to be tried and ultimately assessed as functional. A closer inspection of the distribution of non-zero values further illustrate how irregular this variable is. 
 
@@ -85,14 +85,19 @@ df$construction_year[df$construction_year==0] <- 2000
 df$m_date <- as.Date(df$date_recorded)
 df$daily_time_trend <- as.numeric(df$m_date) # remove the too early ones
 hist(df$daily_time_trend)
-table(f$daily_time_trend)
-df <- df %>% filter(df$daily_time_trend>=14977)
+table(df$daily_time_trend)
+# df <- df %>% filter(df$daily_time_trend>=14977)
 hist(df$daily_time_trend[df$daily_time_trend>14942], breaks = seq(from=14942, to=16042, by=10))
-df$m_year <- as.factor(as.numeric(format(df$m_date,'%Y')))
+
 df$m_months <- as.factor(as.numeric(format(df$m_date,'%m')))
 df$m_day <- as.factor(weekdays(df$m_date))
 
+df$m_year <- as.numeric(format(df$m_date,'%Y'))
 df$age <- df$m_year - df$construction_year 
+df$m_year <- as.factor(as.numeric(format(df$m_date,'%Y')))
+
+df$age <- as.numeric(df$m_year) - df$construction_year 
+
 ```
 
 The remining the variables are all categorical. One subgroup provide information on the geographical location (*basin* *subvillage* *region* *region_code* *district_code* *lga* *ward*). The rest provide diverse information about the pump. The geographical variable can be divided into two groups depending on the number of different categories: few (*basin* *region* *region_code* *district_code* *lga* *ward*) or many (*subvillage* *ward*). We remove from our data set those with too many levels. 
@@ -137,18 +142,29 @@ table(df$funder_is_installer)
 
 We apply all modification to the *test_value* dataset
 ```{r}
-test_values <- test_values %>% filter(test_values$longitude!=0)
+
+test_values<- test_values[, !(colnames(test_values) %in% c("recorded_by", "num_private", "wpt_name"))]
+
+# test_values <- test_values %>% filter(test_values$longitude!=0)
 test_values$construction_year[test_values$construction_year==0] <- 2000
 test_values$m_date <- as.Date(test_values$date_recorded)
 test_values$daily_time_trend <- as.numeric(test_values$m_date) 
-test_values <- test_values %>% filter(test_values$daily_time_trend>=14977)
-test_values$m_year <- as.factor(as.numeric(format(test_values$m_date,'%Y')))
+# test_values <- test_values %>% filter(test_values$daily_time_trend>=14977)
+
 test_values$m_months <- as.factor(as.numeric(format(test_values$m_date,'%m')))
 test_values$m_day <- as.factor(weekdays(test_values$m_date))
+
+test_values$m_year <- as.numeric(format(test_values$m_date,'%Y'))
+test_values$age <- test_values$m_year - test_values$construction_year 
+test_values$m_year <- as.factor(as.numeric(format(test_values$m_date,'%Y')))
+
+test_values<- test_values[, !(colnames(test_values) %in% c("ward", "subvillage"))]
+
 test_values$installer <- tolower(test_values$installer)
 test_values$funder <- tolower(test_values$funder)
 test_values$funder_is_installer <- test_values$funder == test_values$installer & test_values$installer!=""
 test_values$funder_is_installer[test_values$installer=="" | test_values$funder==""] <- "MISSING"
+
 ```
 
 Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
