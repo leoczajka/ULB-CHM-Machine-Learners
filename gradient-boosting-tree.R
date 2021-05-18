@@ -22,13 +22,16 @@ df_gbt$subset <-  ntile(df_gbt$random, 10)
 
 table(df_gbt$subset)
 
+
 gbt_model_1 <- function(some_number) {
   df_train <- df_gbt %>% filter(df_gbt$subset == some_number)
   df_test <- df_gbt %>% filter(df_gbt$subset != some_number)
   
   model_gbt <- train(as.factor(status_group) ~ 
-                       + gps_height + population 
-                     + construction_year + longitude + latitude, 
+                       + amount_tsh + gps_height +longitude + latitude 
+                     + population + construction_year 
+                     + quality_group + quantity + source 
+                     + waterpoint_type+ m_year + payment, 
                      data = df_train,
                      method = "xgbTree")
   
@@ -43,6 +46,7 @@ gbt_model_1 <- function(some_number) {
 
 # generation of the data
 list_results_gbt1 <- lapply(1:10, gbt_model_1) 
+print('ok')
 # printing the result and keeping each result in a vector to compute the mean
 results_v = c()
 for (i in 1:10){
@@ -51,5 +55,6 @@ for (i in 1:10){
 }
 
 error_mean_gbtmodel1 = mean(results_v)
-print('Average of gradient boosting tree model error rate : ', )
+print('Average of gradient boosting tre model error rate : ', )
 print(error_mean_gbtmodel1)
+
