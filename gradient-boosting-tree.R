@@ -54,6 +54,6 @@ for (i in 1:10){
 }
 
 error_mean_gbtmodel1 = mean(results_v)
-print('Average of gradient boosting tre model error rate : ', )
+print('Average of gradient boosting tre model error rate : ' )
 print(error_mean_gbtmodel1)
 
