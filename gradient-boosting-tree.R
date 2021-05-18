@@ -21,8 +21,6 @@ df_gbt$random <- runif(nrow(df_gbt), min=1, max=nrow(df_gbt))
 df_gbt$subset <-  ntile(df_gbt$random, 10)
 
 table(df_gbt$subset)
-df_gbt$subset
-
 
 gbt_model_1 <- function(some_number) {
   df_train <- df_gbt %>% filter(df_gbt$subset == some_number)
