@@ -43,14 +43,14 @@ gbt_model_1 <- function(some_number) {
 
 # generation of the data
 list_results_gbt1 <- lapply(1:10, gbt_model_1) 
-
+print('ok')
 # printing the result and keeping each result in a vector to compute the mean
 results_v = c()
 for (i in 1:10){
   results_v[i] <- list_results_gbt1[[i]][3]$error
-  print(list_results_gbt1[[i]][3]$error)
+  #print(list_results_gbt1[[i]][3]$error)
 }
 
 error_mean_gbtmodel1 = mean(results_v)
-print('mean of the 10 results (gbt model 1) : ')
+print('Average of gradient boosting tree model error rate : ', )
 print(error_mean_gbtmodel1)
