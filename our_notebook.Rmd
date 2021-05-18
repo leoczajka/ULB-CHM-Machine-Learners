@@ -61,7 +61,7 @@ hist(df$latitude)
 sum(df$latitude==0)
 hist(df$gps_height)
 sum(df$gps_height==0)
-# df <- df %>% filter(df$longitude!=0)
+df <- df %>% filter(df$longitude!=0)
 ```
 The variables *population* and *amount_tsh* also seem to have been badly measured. 36% of observations have a population equal to 0, and an additional 12% have a population equal to 1. Both values could be correct. But water pumps should not be too far from people benefiting from it, and as such we would have expected such values to be less frequent. Also, the relative weight of these values is in stark contrast with the rest of the distribution of the *population* variable. About 70% of the *amount_tsh* variable is equal to 0, meaning that there was no water available to waterpoint. This figure is puzzling given that more than half of the pump are qualified as functional, we would expect indeed that some water needs to be available at the water point for the pump to be tried and ultimately assessed as functional. A closer inspection of the distribution of non-zero values further illustrate how irregular this variable is. 
 
@@ -83,10 +83,10 @@ describe(df$construction_year[df$construction_year!=0])
 df$construction_year[df$construction_year==0] <- 2000
 
 df$m_date <- as.Date(df$date_recorded)
-df$daily_time_trend <- as.numeric(df$m_date) # remove the too early ones
+df$daily_time_trend <- as.numeric(df$m_date)
 hist(df$daily_time_trend)
 table(df$daily_time_trend)
-# df <- df %>% filter(df$daily_time_trend>=14977)
+  df <- df %>% filter(df$daily_time_trend>=14977)
 hist(df$daily_time_trend[df$daily_time_trend>14942], breaks = seq(from=14942, to=16042, by=10))
 
 df$m_months <- as.factor(as.numeric(format(df$m_date,'%m')))
@@ -94,9 +94,10 @@ df$m_day <- as.factor(weekdays(df$m_date))
 
 df$m_year <- as.numeric(format(df$m_date,'%Y'))
 df$age <- df$m_year - df$construction_year 
-df$m_year <- as.factor(as.numeric(format(df$m_date,'%Y')))
 
-df$age <- as.numeric(df$m_year) - df$construction_year 
+df$age <- as.numeric(df$m_year) - df$construction_year
+
+ df<- df[, !(colnames(df) %in% c("date_recorded"))]
 
 ```
 
@@ -125,19 +126,43 @@ Next comes the group of variable giving information about the pump with differen
   table(df$source_type,df$source_class )
   table(df$waterpoint_type,df$waterpoint_type_group )
 ```
-*scheme_management*
-*scheme_name*
-*permit* 
-*public_meeting* 
-*funder*
-*installer*
-Finally we create a dummy variable equal to 1 whenever the *funder* is the same as the *installer*. 
+Finally we create a dummy variable equal to 1 whenever the *funder* is the same as the *installer* and remove these two features for they contain too many features. 
 ```{r}
 df$installer <- tolower(df$installer)
 df$funder <- tolower(df$funder)
 df$funder_is_installer <- df$funder == df$installer & df$installer!=""
 df$funder_is_installer[df$installer=="" | df$funder==""] <- "MISSING"
 table(df$funder_is_installer)
+
+df<- df[, !(colnames(df) %in% c("funder", "installer"))]
+
+```
+Last we run a chi-test for each of the categorical variable with relatively few levels against our dependent variable. All p-values are below significant levels therefore if any discrimination can be made between this categorical variable it should be on the basis of the magnitude of the coefficient. By decreasing order the most relevant categorical variable are the following : *quantity* *quantity_group*  *waterpoint_type* *extraction_type* *extraction_type_group* *extraction_type_class* *waterpoint_type_group* *region_code* *region* *payment_type* *payment* *source* *source* *water_quality*  *quality_group* *management* *scheme_management* *basin*  *source_type*  *district_code* *source_class* *public_meeting* *management_group* *permit*. 
+
+```{r}
+chisq.test(df$status_group, df$basin)
+chisq.test(df$status_group, df$region)
+chisq.test(df$status_group, df$region_code)
+chisq.test(df$status_group, df$district_code)
+chisq.test(df$status_group, df$public_meeting)
+chisq.test(df$status_group, df$scheme_management)
+chisq.test(df$status_group, df$permit)
+chisq.test(df$status_group, df$extraction_type)
+chisq.test(df$status_group, df$extraction_type_group)
+chisq.test(df$status_group, df$extraction_type_class)
+chisq.test(df$status_group, df$management)
+chisq.test(df$status_group, df$management_group)
+chisq.test(df$status_group, df$payment)
+chisq.test(df$status_group, df$payment_type)
+chisq.test(df$status_group, df$water_quality)
+chisq.test(df$status_group, df$quality_group)
+chisq.test(df$status_group, df$quantity)
+chisq.test(df$status_group, df$quantity_group)
+chisq.test(df$status_group, df$source)
+chisq.test(df$status_group, df$source_type)
+chisq.test(df$status_group, df$source_class)
+chisq.test(df$status_group, df$waterpoint_type)
+chisq.test(df$status_group, df$waterpoint_type_group)
 ```
 
 We apply all modification to the *test_value* dataset
@@ -156,7 +181,8 @@ test_values$m_day <- as.factor(weekdays(test_values$m_date))
 
 test_values$m_year <- as.numeric(format(test_values$m_date,'%Y'))
 test_values$age <- test_values$m_year - test_values$construction_year 
-test_values$m_year <- as.factor(as.numeric(format(test_values$m_date,'%Y')))
+
+test_values<- test_values[, !(colnames(test_values) %in% c("date_recorded"))]
 
 test_values<- test_values[, !(colnames(test_values) %in% c("ward", "subvillage"))]
 
@@ -165,11 +191,7 @@ test_values$funder <- tolower(test_values$funder)
 test_values$funder_is_installer <- test_values$funder == test_values$installer & test_values$installer!=""
 test_values$funder_is_installer[test_values$installer=="" | test_values$funder==""] <- "MISSING"
 
+test_values<- test_values[, !(colnames(test_values) %in% c("funder", "installer"))]
+
 ```
-
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
-
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
-
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
 
