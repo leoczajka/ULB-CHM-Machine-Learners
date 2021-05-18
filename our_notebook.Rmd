@@ -46,10 +46,12 @@ Let's have a general look at all features. This will allow us to quickly classif
 ```{r}
 describe(df)
 ```
-We remove two variables : *num_private* is almost always equal to 0 and there is no documentation about it; *recorded_by* is always equal to the same value.
+We remove thre variables : *num_private* is almost always equal to 0 and there is no documentation about it; *recorded_by* is always equal to the same value, and *wpt_name* is the name of the water point therefore it is different for each water point and as such should not be useful to make any prediction about water points outside our data train set.
 ```{r}
 describe(df$num_private)
 describe(df$recorded_by)
+ df<- df[, !(colnames(df) %in% c("recorded_by", "num_private", "wpt_name"))]
+
 ```
 There are five strictly (we consider dates separately) numerical variables:  *latitude*, *longitude*, *gps_height*, *population* and *amount_tsh*. All are relevant to the prediction problem we try to solve here. A closer inspection of the *longitude* reveals that some observations have value 0. Given the geographical situation of Tanzania this is not possible. A thorough correction of the data set would imply infering the *longitude* from categorical geographical variables available in the data set. However this would take time and, as the number of observations for which this occurs is small (3%), we simply decide to remove those observations from the data set. By contrast this is not an issue for the *latitude* which seems to be relatively well distributed. About 1/3 of the *gps_height* on the other hand is equal to 0. This value is of course possible, but it's frequency, together with the fact that zero probably correspond to missing in the longitude's variable, may suggest that, as such, *gps_height* is a relatively badly measured variable. 
 ```{r}
@@ -73,7 +75,8 @@ hist(df$amount_tsh[df$amount_tsh>0 & df$amount_ts <1000])
 sum(df$amount_tsh==0)/nrow(df)
 table(df$status_group)
 ```
-The data set contains two information about time: one about the year when the pump was constructed (*construction_year*), the other about the exact date when the pump was tested (*date_recorded*). *construction_year* equals zero for about 35% of the observation. This is obviously a measurement error. We set these observations to the median. *date_recorded* could be used as a factor variable with 356 different values and capturing daily fixed effect. However given that this contributes to considerably increase dimensions of the problem and therefore computing-time for several machine learning procedures, we decide to exploit information from this variable differently. First we transform it into a number to capture time trained at daily rate. We delete 31 observations with strictly implausible values. Then we create 3 categorical variables capturing the year, month and day of the week, during which the measure was taken. 
+The data set contains two information about time: one about the year when the pump was constructed (*construction_year*), the other about the exact date when the pump was tested (*date_recorded*). *construction_year* equals zero for about 35% of the observation. This is obviously a measurement error. We set these observations to the median. *date_recorded* could be used as a factor variable with 356 different values and capturing daily fixed effect. However given that this contributes to considerably increase dimensions of the problem and therefore computing-time for several machine learning procedures, we decide to exploit information from this variable differently. First we transform it into a number to capture time trained at daily rate. We delete 31 observations with strictly implausible values. Then we create 3 categorical variables capturing the year, month and day of the week, during which the measure was taken. Finally we generate the variable *age* equal to the difference between the year of the observation and the construction year.
+
 ```{r}
 sum(df$construction_year==0)/nrow(df)
 describe(df$construction_year[df$construction_year!=0])
@@ -88,16 +91,49 @@ hist(df$daily_time_trend[df$daily_time_trend>14942], breaks = seq(from=14942, to
 df$m_year <- as.factor(as.numeric(format(df$m_date,'%Y')))
 df$m_months <- as.factor(as.numeric(format(df$m_date,'%m')))
 df$m_day <- as.factor(weekdays(df$m_date))
+
+df$age <- df$m_year - df$construction_year 
 ```
+
+The remining the variables are all categorical. One subgroup provide information on the geographical location (*basin* *subvillage* *region* *region_code* *district_code* *lga* *ward*). The rest provide diverse information about the pump. The geographical variable can be divided into two groups depending on the number of different categories: few (*basin* *region* *region_code* *district_code* *lga* *ward*) or many (*subvillage* *ward*). We remove from our data set those with too many levels. 
 
 ```{r}
-df$installer <- tolower(df$installer)
- df$funder <- tolower(df$funder)
- df$funder_is_installer <- df$funder == df$installer & df$installer!=""
-  df$funder_is_installer[df$installer=="" | df$funder==""] <- "MISSING"
-  table(df$funder_is_installer)
+table(df$basin)
+table(df$region, df$region_code)
+table(df$district_code)
+table(df$region_code)
+table(df$lga)
+describe(df$ward)
+describe(df$subvillage)
+ df<- df[, !(colnames(df) %in% c("ward", "subvillage"))]
 ```
+Next comes the group of variable giving information about the pump with different levels of details (*extraction_type*  *extraction_type_group*  *extraction_type_class*  *management*  *management_group*  *payment*  *payment_type*  *water_quality*  *quality_group*  *quantity*  *quantity_group*  *source*  *source_type*  *source_class*  *waterpoint_type*  *waterpoint_type_group*). For instance *extraction_type* is strictly more precise than *extraction_type_group*, which is itself strictly more precise than *extraction_type_class*. As computational time varies a lot across machine learning algorithm depending on the number of features, we decide to keep both precise and general versions of these features, thus is allowing us to pick one or the other, depending on the model at use.
 
+```{r}
+  table(df$extraction_type, df$extraction_type_group)
+  table(df$extraction_type_group, df$extraction_type_class)
+  table(df$management, df$management_group )
+  table(df$payment,df$payment_type )
+  table(df$water_quality,df$quality_group )
+  table(df$quantity, df$quantity_group)
+  table(df$source, df$source_type )
+  table(df$source_type,df$source_class )
+  table(df$waterpoint_type,df$waterpoint_type_group )
+```
+*scheme_management*
+*scheme_name*
+*permit* 
+*public_meeting* 
+*funder*
+*installer*
+Finally we create a dummy variable equal to 1 whenever the *funder* is the same as the *installer*. 
+```{r}
+df$installer <- tolower(df$installer)
+df$funder <- tolower(df$funder)
+df$funder_is_installer <- df$funder == df$installer & df$installer!=""
+df$funder_is_installer[df$installer=="" | df$funder==""] <- "MISSING"
+table(df$funder_is_installer)
+```
 
 We apply all modification to the *test_value* dataset
 ```{r}
